@@ -132,7 +132,7 @@ defmodule Dungeon.Generator do
       die == 19 ->
         state
         |> spawn_trap_node(item)
-        |> recheck(item, :after_trap_30)
+        |> recheck_from(item, :after_trap_30, item.from)
 
       true ->
         {state, _wm_id} =
@@ -141,13 +141,23 @@ defmodule Dungeon.Generator do
             source: :appendix_c_random_monster
           })
 
-        recheck(state, item, :immediate_after_wandering_monster)
+        recheck_from(state, item, :immediate_after_wandering_monster, item.from)
     end
   end
 
   defp recheck(state, item, source) do
     enqueue(state, %{
       from: latest_id(state),
+      level: item.level,
+      env: item.env,
+      depth: item.depth + 1,
+      source: source
+    })
+  end
+
+  defp recheck_from(state, item, source, from_id) do
+    enqueue(state, %{
+      from: from_id,
       level: item.level,
       env: item.env,
       depth: item.depth + 1,
@@ -331,8 +341,7 @@ defmodule Dungeon.Generator do
       true ->
         {state, crossing} = roll_chasm_crossing(state)
 
-        {state,
-         %{special: :chasm, width_ft: 20, crossing: crossing, depth_ft: {150, 200}}}
+        {state, %{special: :chasm, width_ft: 20, crossing: crossing, depth_ft: {150, 200}}}
     end
   end
 
@@ -530,16 +539,36 @@ defmodule Dungeon.Generator do
 
     {state, count, secret_only?} =
       cond do
-        die <= 3 and area_sqft <= 600 -> {state, 1, false}
-        die <= 3 -> {state, 2, false}
-        die <= 6 and area_sqft <= 600 -> {state, 2, false}
-        die <= 6 -> {state, 3, false}
-        die <= 9 and area_sqft <= 600 -> {state, 3, false}
-        die <= 9 -> {state, 4, false}
-        die <= 12 and area_sqft <= 1200 -> {state, 0, true}
-        die <= 12 -> {state, 1, false}
-        die <= 15 and area_sqft <= 1600 -> {state, 0, true}
-        die <= 15 -> {state, 1, false}
+        die <= 3 and area_sqft <= 600 ->
+          {state, 1, false}
+
+        die <= 3 ->
+          {state, 2, false}
+
+        die <= 6 and area_sqft <= 600 ->
+          {state, 2, false}
+
+        die <= 6 ->
+          {state, 3, false}
+
+        die <= 9 and area_sqft <= 600 ->
+          {state, 3, false}
+
+        die <= 9 ->
+          {state, 4, false}
+
+        die <= 12 and area_sqft <= 1200 ->
+          {state, 0, true}
+
+        die <= 12 ->
+          {state, 1, false}
+
+        die <= 15 and area_sqft <= 1600 ->
+          {state, 0, true}
+
+        die <= 15 ->
+          {state, 1, false}
+
         die <= 18 ->
           {state, count} = roll_d4(state)
           {state, count, false}
@@ -719,8 +748,7 @@ defmodule Dungeon.Generator do
     if protect_die <= 8 do
       {state, guard_die} = d20(state)
 
-      {state,
-       %{container: container, protection: %{mode: :guarded, by: guard_result(guard_die)}}}
+      {state, %{container: container, protection: %{mode: :guarded, by: guard_result(guard_die)}}}
     else
       {state, hidden_die} = d20(state)
 
@@ -807,7 +835,10 @@ defmodule Dungeon.Generator do
 
   defp spawn_trap_node(state, item) do
     {state, trap} = roll_trap(state)
-    {state, _trap_id} = add_connected_node(state, item.from, :trap, Map.put(trap, :level, item.level))
+
+    {state, _trap_id} =
+      add_connected_node(state, item.from, :trap, Map.put(trap, :level, item.level))
+
     state
   end
 
@@ -889,14 +920,34 @@ defmodule Dungeon.Generator do
 
     base =
       cond do
-        die <= 5 -> %{shape: :cave, width_ft: 40, height_ft: 60, area_sqft: 2400}
-        die <= 7 -> %{shape: :cave, width_ft: 50, height_ft: 75, area_sqft: 3750}
-        die <= 9 -> %{shape: :double_cave, chambers: [{20, 30}, {60, 60}], area_sqft: 4200}
-        die <= 11 -> %{shape: :double_cave, chambers: [{35, 50}, {80, 90}], area_sqft: 8950}
-        die <= 14 -> %{shape: :cavern, width_ft: 95, height_ft: 125, area_sqft: 11_875}
-        die <= 16 -> %{shape: :cavern, width_ft: 120, height_ft: 150, area_sqft: 18_000}
-        die <= 18 -> %{shape: :cavern, width_ft: 150, height_ft: 200, area_sqft: 30_000}
-        true -> %{shape: :mammoth_cavern, width_ft: {250, 300}, height_ft: {350, 400}, area_sqft: 96_250}
+        die <= 5 ->
+          %{shape: :cave, width_ft: 40, height_ft: 60, area_sqft: 2400}
+
+        die <= 7 ->
+          %{shape: :cave, width_ft: 50, height_ft: 75, area_sqft: 3750}
+
+        die <= 9 ->
+          %{shape: :double_cave, chambers: [{20, 30}, {60, 60}], area_sqft: 4200}
+
+        die <= 11 ->
+          %{shape: :double_cave, chambers: [{35, 50}, {80, 90}], area_sqft: 8950}
+
+        die <= 14 ->
+          %{shape: :cavern, width_ft: 95, height_ft: 125, area_sqft: 11_875}
+
+        die <= 16 ->
+          %{shape: :cavern, width_ft: 120, height_ft: 150, area_sqft: 18_000}
+
+        die <= 18 ->
+          %{shape: :cavern, width_ft: 150, height_ft: 200, area_sqft: 30_000}
+
+        true ->
+          %{
+            shape: :mammoth_cavern,
+            width_ft: {250, 300},
+            height_ft: {350, 400},
+            area_sqft: 96_250
+          }
       end
 
     {state, feature} =

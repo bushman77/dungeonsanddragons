@@ -71,7 +71,11 @@ defmodule DungeonsanddragonsWeb.MixProject do
       setup: ["deps.get", "assets.setup", "assets.build"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind dungeonsanddragons_web", "esbuild dungeonsanddragons_web"],
+      "assets.build": [
+        "compile",
+        "tailwind dungeonsanddragons_web",
+        "esbuild dungeonsanddragons_web"
+      ],
       "assets.deploy": [
         "tailwind dungeonsanddragons_web --minify",
         "esbuild dungeonsanddragons_web --minify",

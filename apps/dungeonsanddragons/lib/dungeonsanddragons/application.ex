@@ -9,7 +9,8 @@ defmodule Dungeonsanddragons.Application do
   def start(_type, _args) do
     children = [
       Dungeonsanddragons.Repo,
-      {DNSCluster, query: Application.get_env(:dungeonsanddragons, :dns_cluster_query) || :ignore},
+      {DNSCluster,
+       query: Application.get_env(:dungeonsanddragons, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Dungeonsanddragons.PubSub}
       # Start a worker by calling: Dungeonsanddragons.Worker.start_link(arg)
       # {Dungeonsanddragons.Worker, arg}

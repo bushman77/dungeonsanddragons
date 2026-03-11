@@ -2,7 +2,9 @@ defmodule DungeonsanddragonsWeb.ErrorJSONTest do
   use DungeonsanddragonsWeb.ConnCase, async: true
 
   test "renders 404" do
-    assert DungeonsanddragonsWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}
+    assert DungeonsanddragonsWeb.ErrorJSON.render("404.json", %{}) == %{
+             errors: %{detail: "Not Found"}
+           }
   end
 
   test "renders 500" do
